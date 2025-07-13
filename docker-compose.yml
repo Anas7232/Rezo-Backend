@@ -14,10 +14,10 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.runCommand({ ping: 1 })"]
+      test: ["CMD-SHELL", "echo 'db.runCommand({ ping: 1 })' | mongosh --quiet --authenticationDatabase admin -u $MONGO_ROOT_USER -p $MONGO_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
-      retries: 3
+      retries: 5
 
   postgres:
     image: postgres:15.5-alpine
@@ -85,7 +85,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:${APP_PORT:-3000}/server-health" ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${APP_PORT:-3000}/server-health || exit 1" ]
       interval: 30s
       timeout: 5s
       retries: 3
