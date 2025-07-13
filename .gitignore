@@ -1,0 +1,59 @@
+.qodo 
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+
+# Build output
+dist/
+build/
+
+# Dependency directories
+jspm_packages/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Prisma migrations
+prisma/migrations/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# MacOS files
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+
+# Test files
+*.test.js
+*.spec.js
+
+# Text files
+*.txt
+
+client_secret_1073930846177-docvkc3l97sa6didhrrrr7jkr07302vq.apps.googleusercontent.com.json

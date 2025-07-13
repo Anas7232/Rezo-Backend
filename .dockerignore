@@ -1,0 +1,81 @@
+# Docker-specific ignores
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.pid
+
+# Environment variables
+# .env
+.env.*
+.env.local
+
+# Build output
+dist/
+build/
+out/
+.next/
+
+# Dependency directories
+jspm_packages/
+.pnp/
+.pnp.js
+
+# Development/testing
+coverage/
+.nyc_output/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Cache directories
+.npm/
+.yarn/
+.cache/
+.eslintcache
+
+# REPL history
+.node_repl_history
+
+# Prisma
+prisma/migrations/
+*.db
+*.db-journal
+
+# TypeScript
+*.tsbuildinfo
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Test files
+*.test.js
+*.spec.js
+__tests__/
+__mocks__/
+
+# Documentation
+docs/
+*.md

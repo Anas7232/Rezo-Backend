@@ -1,0 +1,662 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+  engineType    = "binary"
+  // previewFeatures = `
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================================================
+// Enums & Types
+// ==================================================
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// enum RoomType {
+//   BEDROOM
+//   BATHROOM
+//   LIVING_ROOM
+//   KITCHEN
+//   DINING_ROOM
+//   OTHER
+// }
+
+// enum AmenityCategory {
+//   ESSENTIALS
+//   WIFI
+//   PARKING
+//   POOL
+//   KITCHEN
+//   HEATING
+//   AIR_CONDITIONING
+// }
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+  BUSY
+}
+
+enum MessageStatus {
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum PropertyListingType {
+  RENT
+  SALE
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  OTHER
+  PREFER_NOT_TO_SAY
+}
+
+// --------------------------------------------------
+// Core User Model with Security Features
+// --------------------------------------------------
+model User {
+  id                  String                    @id @default(uuid()) @db.Uuid
+  email               String                    @unique @db.VarChar(255)
+  username            String?                   @unique @db.VarChar(50)
+  passwordHash        String?                   @map("password_hash") // Nullable for OAuth users
+  isActive            Boolean                   @default(true) @map("is_active")
+  isVerified          Boolean                   @default(false) @map("is_verified")
+  mfaEnabled          Boolean                   @default(false) @map("mfa_enabled")
+  lastLogin           DateTime?                 @map("last_login")
+  failedLoginAttempts Int                       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime?                 @map("locked_until")
+  profile             Profile?
+  googleId            String?                   @unique @map("google_id") @db.VarChar(255)
+  sessions            Session[]
+  roles               UserRole[]
+  auditLogs           AuditLog[]
+  passwordResets      PasswordReset[]
+  otpVerifications    OTPVerification[]
+  twoFactorAuth       TwoFactorAuth?
+  createdAt           DateTime                  @default(now()) @map("created_at")
+  updatedAt           DateTime                  @updatedAt @map("updated_at")
+  properties          Property[]
+  bookings            Booking[]
+  payments            Payment[]
+  reviews             Review[]
+  conversations       ConversationParticipant[]
+  sentMessages        MessageMetadata[]         @relation("SenderToMessage")
+  receivedMessages    MessageMetadata[]         @relation("ReceiverToMessage")
+  ownershipRequests   OwnershipRequest[]
+
+  @@index([email, isActive])
+  @@index([username, isActive])
+  @@map("users")
+}
+
+// --------------------------------------------------
+// Enhanced OTP Verification System
+// --------------------------------------------------
+model OTPVerification {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  type        String    @db.VarChar(20) // EMAIL_VERIFICATION, PASSWORD_RESET, LOGIN_2FA
+  code        String    @db.VarChar(6) // 6-digit code
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  expiresAt   DateTime  @map("expires_at")
+  verifiedAt  DateTime? @map("verified_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("otp_verifications")
+}
+
+// --------------------------------------------------
+// Updated Password Reset System
+// --------------------------------------------------
+model PasswordReset {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  token     String   @unique @db.VarChar(512)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("password_resets")
+}
+
+// --------------------------------------------------
+// Enhanced Two-Factor Authentication
+// --------------------------------------------------
+model TwoFactorAuth {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @unique @db.Uuid
+  secret        String    @db.VarChar(64)
+  backupCodes   String[]  @db.VarChar(64) // Hashed backup codes
+  recoveryToken String?   @unique @map("recovery_token") @db.VarChar(512)
+  lastUsed      DateTime? @map("last_used")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  user          User      @relation(fields: [userId], references: [id])
+
+  @@map("two_factor_auth")
+}
+
+// --------------------------------------------------
+// Profile Information (Separate for Security)
+// --------------------------------------------------
+model Profile {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @unique @db.Uuid
+  firstName        String?   @map("first_name") @db.VarChar(50)
+  lastName         String?   @map("last_name") @db.VarChar(50)
+  phone            String?   @db.VarChar(20)
+  avatarUrl        String?   @map("avatar_url") @db.VarChar(255)
+  dateOfBirth      DateTime? @map("date_of_birth")
+  user             User      @relation(fields: [userId], references: [id])
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  gender           Gender    @default(OTHER)
+  emergencyContact String?   @map("emergency_contact") @db.VarChar(100)
+  nationality      String?   
+  cnicNumber       String?   @map("cnic_number") @db.VarChar(13)
+
+  // Location
+  currentAddress String? @map("current_address") @db.VarChar(255)
+  city           String? @db.VarChar(50)
+  state          String? @db.VarChar(50)
+  country        String? @db.VarChar(50) // ISO country code
+  postalCode     String? @map("postal_code") @db.VarChar(20)
+  timeZone       String? @map("time_zone") @db.VarChar(50) // e.g., "America/New_York"
+
+  notificationPreferences Json? @map("notification_preferences")
+
+  // Indexes
+  @@index([firstName, lastName])
+  @@index([country, city])
+  @@index([createdAt])
+  @@map("profiles")
+}
+
+// --------------------------------------------------
+// Authentication & Session Management
+// --------------------------------------------------
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  sessionToken String   @unique @map("session_token") @db.VarChar(12000)
+  refreshToken String   @unique @map("refresh_token") @db.VarChar(512)
+  deviceInfo   String?  @map("device_info") @db.VarChar(255)
+  ipAddress    String?  @map("ip_address") @db.VarChar(45)
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// --------------------------------------------------
+// RBAC/ABAC Authorization System
+// --------------------------------------------------
+model Role {
+  id          String           @id @default(uuid()) @db.Uuid
+  name        String           @unique @db.VarChar(50)
+  description String?          @db.VarChar(255)
+  isDefault   Boolean          @default(false) @map("is_default")
+  isSystem    Boolean          @default(false) @map("is_system")
+  permissions RolePermission[]
+  users       UserRole[]
+  deletedAt   DateTime?        @map("deleted_at") // ✅ Soft delete field
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([name, isDefault])
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid()) @db.Uuid
+  resource    String           @db.VarChar(100)
+  action      String           @db.VarChar(50)
+  description String?          @db.VarChar(255)
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@unique([resource, action])
+  @@index([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String     @db.Uuid
+  permissionId String     @db.Uuid
+  conditions   Json? // ABAC conditions
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  @@id([roleId, permissionId])
+  @@index([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId     String    @db.Uuid // The User receiving the role
+  roleId     String    @db.Uuid // The Role assigned to the User
+  user       User      @relation(fields: [userId], references: [id]) // Relationship with User
+  role       Role      @relation(fields: [roleId], references: [id]) // Relationship with Role
+  assignedBy String    @db.Uuid // The User (Admin) who assigned the role
+  expiresAt  DateTime? @map("expires_at") // Optional expiration date
+  createdAt  DateTime  @default(now()) @map("created_at") // Timestamp of when the role was assigned
+
+  @@id([userId, roleId]) // ✅ Composite Primary Key (ensures unique User-Role pairs)
+  @@index([userId, roleId])
+  @@map("user_roles")
+}
+
+// --------------------------------------------------
+// Casbin Integration for Policy Enforcement
+// --------------------------------------------------
+model CasbinRule {
+  id    Int     @id @default(autoincrement())
+  ptype String  @db.VarChar(10)
+  v0    String? @db.VarChar(100)
+  v1    String? @db.VarChar(100)
+  v2    String? @db.VarChar(100)
+  v3    String? @db.VarChar(100)
+  v4    String? @db.VarChar(100)
+  v5    String? @db.VarChar(100)
+
+  @@index([ptype, v0, v1, v2, v3])
+  @@map("casbin_rules")
+}
+
+// --------------------------------------------------
+// Audit & Compliance
+// --------------------------------------------------
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actionType String   @map("action_type") @db.VarChar(50)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  userAgent  String?  @map("user_agent") @db.VarChar(255)
+  oldValues  Json?
+  newValues  Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id])
+  metadata   Json?
+
+  @@index([actionType])
+  @@index([entityType, entityId])
+  @@index([userId])
+  @@map("audit_logs")
+}
+
+// --------------------------------------------------
+// Property Management
+// --------------------------------------------------
+
+model Property {
+  id                 String              @id @default(uuid()) @db.Uuid
+  ownerId            String              @db.Uuid
+  listingType        PropertyListingType @default(RENT)
+  title              String              @db.VarChar(120)
+  description        String
+  basePrice          Decimal             @map("base_price") @db.Money
+  currency           String              @default("PKR") @db.VarChar(3)
+  status             PropertyStatus      @default(PENDING)
+  location           Json // { lat: Decimal, lng: Decimal, plusAccuracy: Float? }
+  address            String              @db.VarChar(255)
+  city               String?             @db.VarChar(50)
+  state              String              @db.VarChar(50)
+  country            String              @db.VarChar(50) // ISO country code
+  postalCode         String              @map("postal_code") @db.VarChar(20)
+  maxGuests          Int                 @map("max_guests")
+  availability       Availability[]
+  bookings           Booking[]
+  amenities          Amenity[]
+  roomSpecs          RoomSpec[]
+  houseRules         Json? // Flexible rule structure
+  photos             String[]            @default([]) // URLs to high-res images
+  virtualTours       String[]            @default([]) // URLs to 360 tours
+  minStay            Int                 @default(1) @map("min_stay")
+  maxStay            Int?                @map("max_stay")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  updatedAt          DateTime            @updatedAt @map("updated_at")
+  deletedAt          DateTime?           @map("deleted_at")
+  cancellationPolicy String?
+  PropertyType       String?             @map("property_type") @db.VarChar(50) // e.g., "Apartment", "House", etc.
+  sizeSqft           Int?                @map("size_sqft") // Total size in square feet
+  // Relationships
+  owner              User                @relation(fields: [ownerId], references: [id])
+  reviews            Review[]
+  payments           Payment[]
+  rentalDetails      RentalDetails?
+  saleDetails        SaleDetails?
+
+  // Assertion to ensure proper type matching
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([basePrice])
+  @@index([maxGuests])
+  @@index([minStay])
+  @@index([maxStay])
+  @@index([createdAt])
+  @@map("properties")
+}
+
+model RoomSpec {
+  id          String   @id @default(uuid()) @db.Uuid
+  propertyId  String   @db.Uuid
+  type        String?  @db.VarChar(50)
+  count       Int
+  sizeSqft    Int?     @map("size_sqft")
+  description String?
+  property    Property @relation(fields: [propertyId], references: [id])
+
+  @@map("room_specifications")
+}
+
+model Amenity {
+  id          String   @id @default(uuid()) @db.Uuid
+  propertyId  String   @db.Uuid
+  name        String
+  category    String?  @db.VarChar(50) // e.g., "Essentials", "WiFi", etc.
+  description String?
+  property    Property @relation(fields: [propertyId], references: [id])
+
+  @@map("amenities")
+}
+
+model Availability {
+  id          String   @id @default(uuid()) @db.Uuid
+  propertyId  String   @db.Uuid
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  price       Decimal  @db.Money
+  isAvailable Boolean  @default(true) @map("is_available")
+  bookingId   String?  @db.Uuid
+  notes       String?  @db.VarChar(255)
+  // Relationships
+  property    Property @relation(fields: [propertyId], references: [id])
+  booking     Booking? @relation(fields: [bookingId], references: [id])
+
+  @@unique([propertyId, startDate])
+  @@index([propertyId, startDate, endDate])
+  @@index([isAvailable])
+  @@index([bookingId])
+  @@map("property_availability")
+}
+
+model RentalDetails {
+  id         String   @id @default(uuid()) @db.Uuid
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String   @unique @db.Uuid
+
+  minStay           Int      @default(1) @map("min_stay")
+  maxStay           Int?     @map("max_stay")
+  securityDeposit   Decimal? @map("security_deposit") @db.Money
+  utilitiesIncluded Boolean  @default(false) @map("utilities_included")
+  leaseTermMonths   Int?     @map("lease_term_months")
+  availableFrom     DateTime @map("available_from")
+  monthlyRate       Decimal  @map("monthly_rate") @db.Money
+  weeklyRate        Decimal? @map("weekly_rate") @db.Money
+  dailyRate         Decimal? @map("daily_rate") @db.Money
+
+  @@map("rental_details")
+}
+
+model SaleDetails {
+  id         String   @id @default(uuid()) @db.Uuid
+  property   Property @relation(fields: [propertyId], references: [id])
+  propertyId String   @unique @db.Uuid
+
+  salePrice       Decimal  @map("sale_price") @db.Money
+  priceNegotiable Boolean  @default(false) @map("price_negotiable")
+  propertyTaxRate Decimal? @map("property_tax_rate")
+  hoaFee          Decimal? @map("hoa_fee") @db.Money
+  yearBuilt       Int?     @map("year_built")
+  lastRenovation  Int?     @map("last_renovation")
+  ownershipType   String?  @map("ownership_type") @db.VarChar(50)
+
+  @@map("sale_details")
+}
+
+// --------------------------------------------------
+// Booking System
+// --------------------------------------------------
+model Booking {
+  id                 String        @id @default(uuid()) @db.Uuid
+  propertyId         String        @db.Uuid
+  tenantId           String        @db.Uuid
+  startDate          DateTime      @map("start_date")
+  endDate            DateTime      @map("end_date")
+  totalPrice         Decimal       @map("total_price") @db.Money
+  basePrice          Decimal       @map("base_price") @db.Money
+  taxes              Decimal       @db.Money
+  fees               Decimal       @db.Money
+  discountAmount     Decimal       @default(0) @map("discount_amount") @db.Money
+  currency           String        @default("USD") @db.VarChar(3)
+  adults             Int           @default(1)
+  children           Int           @default(0)
+  infants            Int           @default(0)
+  specialRequests    String?       @db.VarChar(500)
+  cancellationReason String?       @db.VarChar(255)
+  cancellationDate   DateTime?     @map("cancellation_date")
+  status             BookingStatus @default(PENDING)
+  createdAt          DateTime      @default(now()) @map("created_at")
+  updatedAt          DateTime      @updatedAt @map("updated_at")
+
+  // Relationships
+  property     Property?      @relation(fields: [propertyId], references: [id])
+  tenant       User           @relation(fields: [tenantId], references: [id])
+  payment      Payment?
+  Review       Review?
+  availability Availability[]
+
+  @@index([propertyId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([createdAt])
+  @@map("bookings")
+}
+
+// --------------------------------------------------
+// Payment System
+// --------------------------------------------------
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  bookingId       String        @unique @db.Uuid
+  amount          Decimal       @db.Money
+  currency        String        @default("USD") @db.VarChar(3)
+  paymentMethod   String?       @db.VarChar(20)
+  transactionId   String?       @unique @map("transaction_id") @db.VarChar(255)
+  status          PaymentStatus
+  refundId        String?       @unique @map("refund_id") @db.VarChar(255)
+  refundAmount    Decimal?      @map("refund_amount") @db.Money
+  capturedAt      DateTime?     @map("captured_at")
+  refundedAt      DateTime?     @map("refunded_at")
+  failureReason   String?       @map("failure_reason") @db.VarChar(255)
+  paymentIntentId String?       @unique @map("payment_intent_id") @db.VarChar(255)
+  processedAt     DateTime?     @map("processed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  userId          String?       @db.Uuid
+  propertyId      String?       @db.Uuid
+
+  // Relationships
+  booking  Booking   @relation(fields: [bookingId], references: [id])
+  User     User?     @relation(fields: [userId], references: [id])
+  Property Property? @relation(fields: [propertyId], references: [id])
+
+  @@index([bookingId])
+  @@index([transactionId])
+  @@index([status])
+  @@index([processedAt])
+  @@map("payments")
+}
+
+// --------------------------------------------------
+// Review System
+// --------------------------------------------------
+model Review {
+  id            String   @id @default(uuid()) @db.Uuid
+  propertyId    String   @db.Uuid
+  bookingId     String   @unique @db.Uuid
+  tenantId      String   @db.Uuid
+  rating        Int      @db.SmallInt
+  comment       String?  @db.VarChar(500)
+  cleanliness   Int      @db.SmallInt
+  accuracy      Int      @db.SmallInt
+  checkIn       Int      @db.SmallInt
+  communication Int      @db.SmallInt
+  location      Int      @db.SmallInt
+  value         Int      @db.SmallInt
+  hostReply     String?  @map("host_reply") @db.VarChar(500)
+  isAnonymous   Boolean  @default(false) @map("is_anonymous")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relationships
+  property Property @relation(fields: [propertyId], references: [id])
+  tenant   User     @relation(fields: [tenantId], references: [id])
+  booking  Booking  @relation(fields: [bookingId], references: [id])
+
+  @@unique([propertyId, tenantId])
+  @@index([propertyId, rating])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
+// --------------------------------------------------
+// Message Management
+// --------------------------------------------------
+
+model Conversation {
+  id            String    @id @default(uuid())
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastMessageAt DateTime? @map("last_message_at")
+  isGroup       Boolean   @default(false) @map("is_group")
+  title         String?
+
+  // Relationships
+  participants ConversationParticipant[]
+  messages     MessageMetadata[]
+
+  @@map("conversations")
+}
+
+model ConversationParticipant {
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String       @map("conversation_id")
+  user           User         @relation(fields: [userId], references: [id])
+  userId         String       @map("user_id") @db.Uuid // Fixed mapping
+  joinedAt       DateTime     @default(now()) @map("joined_at")
+
+  @@id([conversationId, userId])
+  @@map("conversation_participants")
+}
+
+model MessageMetadata {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId String       @map("conversation_id")
+
+  sender     User   @relation("SenderToMessage", fields: [senderId], references: [id])
+  senderId   String @map("sender_id") @db.Uuid
+  receiver   User   @relation("ReceiverToMessage", fields: [receiverId], references: [id])
+  receiverId String @map("receiver_id") @db.Uuid
+
+  sentAt     DateTime          @default(now()) @map("sent_at")
+  mongoId    String?           @map("mongo_id")
+  status     MessageStatus     @default(SENT)
+  deliveries DeliveryReceipt[]
+
+  // Indexes
+  @@index([conversationId, sentAt])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("message_metadata")
+}
+
+model DeliveryReceipt {
+  id         String          @id @default(uuid()) @db.Uuid
+  message    MessageMetadata @relation(fields: [messageId], references: [id])
+  messageId  String          @db.Uuid
+  userId     String          @db.Uuid
+  status     MessageStatus
+  receivedAt DateTime?
+  readAt     DateTime?
+
+  @@unique([messageId, userId])
+}
+
+// --------------------------------------------------
+// Ownership Request System
+// --------------------------------------------------
+enum OwnershipRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model OwnershipRequest {
+  id          String                  @id @default(uuid()) @db.Uuid
+  userId      String                  @db.Uuid
+  email       String                  @db.VarChar(255)
+  status      OwnershipRequestStatus  @default(PENDING)
+  profile     Json?
+  createdAt   DateTime                @default(now()) @map("created_at")
+  updatedAt   DateTime                @updatedAt @map("updated_at")
+  approvedAt  DateTime?
+  rejectedAt  DateTime?
+  user        User                    @relation(fields: [userId], references: [id])
+
+  @@unique([userId, status])
+  @@index([email, status])
+  @@map("ownership_requests")
+}
