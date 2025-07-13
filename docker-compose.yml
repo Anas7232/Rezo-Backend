@@ -14,7 +14,10 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.runCommand({ ping: 1 })' | mongosh --quiet --authenticationDatabase admin -u $MONGO_ROOT_USER -p $MONGO_ROOT_PASSWORD"]
+      test: [
+        "CMD-SHELL",
+        "echo 'db.runCommand({ ping: 1 })' | mongosh --quiet --authenticationDatabase admin -u ${MONGO_ROOT_USER} -p ${MONGO_ROOT_PASSWORD}"
+      ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -101,3 +104,4 @@ volumes:
 networks:
   backend:
     driver: bridge
+
