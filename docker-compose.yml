@@ -13,8 +13,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: >
-        sh -c 'mongosh --quiet --authenticationDatabase admin -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --eval "db.adminCommand({ ping: 1 })" || exit 1'
+      test: ["CMD-SHELL", "mongosh --quiet --authenticationDatabase admin -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --eval 'db.adminCommand({ ping: 1 })' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -97,6 +96,3 @@ volumes:
 networks:
   backend:
     driver: bridge
-
-
-
