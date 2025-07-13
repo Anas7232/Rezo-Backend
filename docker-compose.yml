@@ -2,22 +2,22 @@ version: '3.8'
 
 services:
   mongodb:
-    image: mongo:6.0.14
-    container_name: mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-    volumes:
-      - mongodb_data:/data/db
-    networks:
-      - backend
-    healthcheck:
-      test: >
-        mongosh --quiet --authenticationDatabase admin -u ${MONGO_ROOT_USER} -p ${MONGO_ROOT_PASSWORD} --eval "db.adminCommand({ ping: 1 })"
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  image: mongo:6.0.14
+  container_name: mongodb
+  restart: unless-stopped
+  environment:
+    MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+    MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+  volumes:
+    - mongodb_data:/data/db
+  networks:
+    - backend
+  healthcheck:
+    test: >
+      sh -c 'mongosh --quiet --authenticationDatabase admin -u "$$MONGO_INITDB_ROOT_USERNAME" -p "$$MONGO_INITDB_ROOT_PASSWORD" --eval "db.adminCommand({ ping: 1 })" || exit 1'
+    interval: 10s
+    timeout: 5s
+    retries: 5
 
   postgres:
     image: postgres:15.5-alpine
