@@ -14,11 +14,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: |
-        mongosh --quiet --eval "
-        db.getSiblingDB('admin').auth('mongoadmin', 'changeme123');
-        db.adminCommand('ping')
-        "
+      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")' || exit 1"]
       interval: 15s
       timeout: 30s
       retries: 6
