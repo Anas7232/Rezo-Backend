@@ -14,12 +14,7 @@ services:
     networks:
       - backend
     healthcheck:
-      test: >
-        mongosh --quiet
-        --username $$MONGO_INITDB_ROOT_USERNAME
-        --password $$MONGO_INITDB_ROOT_PASSWORD
-        --authenticationDatabase admin
-        --eval "db.adminCommand('ping')"
+      test: ["CMD", "mongo", "--eval", "db.adminCommand('ping')"]
       interval: 15s
       timeout: 30s
       retries: 6
