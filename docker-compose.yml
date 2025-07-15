@@ -14,7 +14,8 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "echo 'db.getSiblingDB(\"admin\").auth(\"${MONGO_ROOT_USER}\", \"${MONGO_ROOT_PASSWORD}\"); db.runCommand({ping:1})' | mongo --quiet || exit 1"]
+      test: |
+        mongo --eval "db.adminCommand('ping')" -u "${MONGO_ROOT_USER}" -p "${MONGO_ROOT_PASSWORD}" --quiet
       interval: 15s
       timeout: 30s
       retries: 6
@@ -35,10 +36,11 @@ services:
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 10s
       retries: 5
+      start_period: 30s
     ports:
       - "5432:5432"
 
