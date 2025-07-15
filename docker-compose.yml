@@ -6,15 +6,15 @@ services:
     container_name: mongodb
     restart: unless-stopped
     environment:
-      MONGO_INITDB_ROOT_USERNAME: mongoadmin
-      MONGO_INITDB_ROOT_PASSWORD: changeme123
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
       MONGO_INITDB_DATABASE: rezo_db
     volumes:
       - mongodb_data:/data/db
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval 'db.adminCommand(\"ping\")' || exit 1"]
+      test: ["CMD-SHELL", "echo 'db.adminCommand(\"ping\")' | mongo --username ${MONGO_ROOT_USER} --password ${MONGO_ROOT_PASSWORD} --authenticationDatabase admin --quiet || exit 1"]
       interval: 15s
       timeout: 30s
       retries: 6
@@ -27,15 +27,15 @@ services:
     container_name: postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: changeme123
-      POSTGRES_DB: rezo_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - backend
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d rezo_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 10s
       retries: 5
@@ -71,9 +71,11 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:changeme123@postgres:5432/rezo_db?schema=public&connection_limit=20&pool_timeout=10
-      MONGODB_URI: mongodb://mongoadmin:changeme123@mongodb:27017/rezo_db?authSource=admin
+      DATABASE_URL: ${DATABASE_URL}
+      MONGODB_URI: ${MONGODB_URI}
       REDIS_URL: redis://redis:6379
+    env_file:
+      - .env
     ports:
       - "4000:3000"
     volumes:
