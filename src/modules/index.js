@@ -31,19 +31,5 @@ routes.get("/csrf-token", (req, res) => {
   });
   res.json({ csrfToken: token });
 });
-// routes.get(
-//   "/protected",
-//   // authenticateUser(),
-//   // authenticateUser({ roles: ["owner", "admin"] }),
-//   (req, res) => {
-//     res.json({
-//       message: "Hello World! Successfully accessed this route 🎉",
-//       "header.authorization": ,
-//     });
-//   }
-// );
 
-// routes.get("/dashboard", (req, res) => {
-//   res.json({ message: "Hello World! Successfully accessed this route 🎉" });
-// });
 export default routes;

@@ -16,12 +16,8 @@ import { initializeCasbin } from "../config/casbin.js";
 import { connectMongoDB, disconnectMongoDB } from "./mongodb.js";
 import mongoose from "mongoose";
 import { setupWebSocket, getIO } from "../websocket/index.js";
-// import { createServer } from "http";
-// import session from "express-session";
-// import config from "./env.js";
 import { sessionMiddleware } from "./session.js";
 const app = express();
-// const server = createServer(app);
 
 // ========================
 // Security Middleware
@@ -45,25 +41,6 @@ app.set('trust proxy', true);
 // Session Middleware
 // =========================
 app.use(sessionMiddleware);
-// app.use(
-//   session({
-//     secret:
-//       config.get("sessionSecrate") || crypto.randomBytes(64).toString("hex"),
-//     resave: false,
-//     saveUninitialized: false, // Changed for GDPR compliance
-//     store:
-//       config.get("env") === "production"
-//         ? new RedisStore({ client: redisClient })
-//         : null,
-//     cookie: {
-//       secure: false,
-//       secure: config.get("env") === "production",
-//       httpOnly: true,
-//       sameSite: "lax",
-//       maxAge: 24 * 60 * 60 * 1000,
-//     },
-//   })
-// );
 
 // ========================
 // CORS Configuration
@@ -89,20 +66,6 @@ initializeCasbin();
 initializePassport(passport);
 app.use(passport.initialize());
 app.use(passport.session());
-// Setup WebSocket
-// setupWebSocket(server);
-// ========================
-// Rate Limiting
-// ========================
-// app.use(
-//   rateLimit({
-//     windowMs: 15 * 60 * 1000, // 15 minutes
-//     max: 100, // Limit each IP to 100 requests per window
-//     standardHeaders: true,
-//     legacyHeaders: false,
-//     message: "Too many requests, please try again later.",
-//   })
-// );
 
 // ========================
 // Request Parsing

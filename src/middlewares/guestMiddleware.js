@@ -49,9 +49,6 @@ export const guestMiddleware = () => {
       next();
     } catch (error) {
       // Handle different response types
-      // if (req.accepts('html')) {
-      //   return res.redirect('/api/protected');
-      // }
       
       res.status(error.statusCode || 401).json({
         success: false,
