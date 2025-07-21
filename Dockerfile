@@ -48,7 +48,7 @@ ENV PORT=3000
 
 # 6. Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:$PORT/health || exit 1
+    CMD curl -f http://localhost:$PORT/server-health || exit 1
 
 # 7. Drop privileges and start PM2
 USER appuser
