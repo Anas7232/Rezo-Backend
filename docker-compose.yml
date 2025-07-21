@@ -52,7 +52,27 @@ services:
       start_period: 30s
     ports:
       - "5432:5432"
-    command: ["postgres", "-c", "max_connections=200"]
+    command: ["postgres", "-c", "max_connections=500"]
+
+  pgbouncer:
+    image: edoburu/pgbouncer
+    container_name: pgbouncer
+    restart: unless-stopped
+    ports:
+      - "6432:6432"
+    environment:
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 1000
+      DEFAULT_POOL_SIZE: 100
+    depends_on:
+      - postgres
+    networks:
+      - backend
 
   redis:
     image: redis:7.2-alpine
@@ -82,6 +102,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      pgbouncer:
+        condition: service_started
     env_file:
       - .env
     environment:
@@ -89,6 +111,7 @@ services:
       PORT: 3000
       REDIS_URL: redis://redis:6379
       MONGODB_URI: ${MONGODB_URI}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:6432/${POSTGRES_DB}
     ports:
       - "3000:3000"
     volumes:
