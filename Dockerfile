@@ -21,7 +21,7 @@ COPY . .
 FROM node:20-slim
 
 # 1. Install runtime dependencies
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y openssl curl && rm -rf /var/lib/apt/lists/*
 
 # 2. Setup non-root user
 RUN groupadd -g 1001 appgroup && \
@@ -29,15 +29,19 @@ RUN groupadd -g 1001 appgroup && \
 
 WORKDIR /app
 
+# Create logs folder and set ownership
+RUN mkdir -p /app/logs && chown -R appuser:appgroup /app/logs
+
 # 3. Install PM2 globally
 RUN npm install -g pm2@latest
 
 # 4. Copy production files from builder
 COPY --from=builder --chown=appuser:appgroup /app/node_modules ./node_modules
-COPY --from=builder --chown=appuser:appgroup /app/package.json ./
+COPY --from=builder --chown=appuser:appgroup /app/package.json ./package.json
 COPY --from=builder --chown=appuser:appgroup /app/src ./src
 COPY --from=builder --chown=appuser:appgroup /app/prisma ./prisma
-COPY --from=builder --chown=user:group /app/.env ./.env
+COPY --from=builder --chown=appuser:appgroup /app/.env ./.env
+
 # 5. Set environment
 ENV NODE_ENV=production
 ENV PORT=3000

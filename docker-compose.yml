@@ -91,7 +91,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./:/app
+      - ./logs:/app/logs
       - /app/node_modules
     networks:
       - backend
