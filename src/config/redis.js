@@ -2,27 +2,50 @@ import Redis from "ioredis";
 import config from "./env.js";
 import { logger } from "./logger.js";
 
-// Parse Redis URL for logging purposes
-const redisUrl = config.get("redisUrl");
-const parsedUrl = new URL(redisUrl);
-const host = parsedUrl.hostname;
-const port = parseInt(parsedUrl.port, 10);
+let redis;
+let host, port;
 
-// Initialize Redis with retry strategy
-const redis = new Redis(redisUrl, {
-  retryStrategy: (times) => Math.min(times * 100, 3000),
-  tls: parsedUrl.protocol === "rediss:" ? {} : undefined, // Enable TLS for Redis Cloud
-  maxRetriesPerRequest: null,
-  enableOfflineQueue: true,
-});
+// Get Redis URL from config
+const redisUrl = config.get("redisUrl");
+
+if (redisUrl) {
+  // Use Redis URL
+  try {
+    const parsedUrl = new URL(redisUrl);
+    host = parsedUrl.hostname;
+    port = parseInt(parsedUrl.port, 10);
+
+    redis = new Redis(redisUrl, {
+      retryStrategy: (times) => Math.min(times * 100, 3000),
+      tls: parsedUrl.protocol === "rediss:" ? {} : undefined,
+      maxRetriesPerRequest: null,
+      enableOfflineQueue: true,
+    });
+
+    redis.options.scaleReads = 'slave';
+  } catch (error) {
+    logger.error("❌ Invalid REDIS_URL:", error);
+    throw error;
+  }
+} else {
+  // Fallback to REDIS_HOST + REDIS_PORT
+  host = config.get("redisHost") || "localhost";
+  port = parseInt(config.get("redisPort") || "6379", 10);
+
+  redis = new Redis({
+    host,
+    port,
+    retryStrategy: (times) => Math.min(times * 100, 3000),
+    maxRetriesPerRequest: null,
+    enableOfflineQueue: true,
+  });
+
+  redis.options.scaleReads = 'slave';
+}
 
 // Redis event listeners
-redis.options.scaleReads = 'slave';
 redis.on("connect", () => {
   logger.info(`✅ Connected to Redis at ${host}:${port}`);
-  if (parsedUrl.password) {
-    logger.debug("🔐 Using authenticated Redis connection");
-  }
 });
 
 redis.on("error", (err) => {
