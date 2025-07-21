@@ -52,7 +52,14 @@ services:
       start_period: 30s
     ports:
       - "5432:5432"
-    command: ["postgres", "-c", "max_connections=500"]
+    command: [
+      "postgres",
+      "-c", "max_connections=500",
+      "-c", "shared_buffers=256MB",
+      "-c", "work_mem=4MB",
+      "-c", "maintenance_work_mem=64MB",
+      "-c", "effective_cache_size=768MB"
+    ]
 
   pgbouncer:
     image: edoburu/pgbouncer
@@ -67,8 +74,11 @@ services:
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB}
       POOL_MODE: transaction
-      MAX_CLIENT_CONN: 1000
-      DEFAULT_POOL_SIZE: 100
+      MAX_CLIENT_CONN: 2000
+      DEFAULT_POOL_SIZE: 50
+      RESERVE_POOL_SIZE: 10
+      RESERVE_POOL_TIMEOUT: 5
+      SERVER_RESET_QUERY: DISCARD ALL
     depends_on:
       - postgres
     networks:

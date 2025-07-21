@@ -98,7 +98,7 @@ app.use(httpLogger);
 // ========================
 // Enhanced Health Check
 // ========================
-app.get("/health", (req, res) => {
+app.get("/server-health", (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
