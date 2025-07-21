@@ -10,20 +10,21 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
-      MONGO_INITDB_DATABASE: ${MONGODB_URI}
+      MONGO_INITDB_DATABASE: admin
     volumes:
       - mongodb_data:/data/db
     networks:
       - backend
     healthcheck:
       test: >
-        mongo --eval "db.runCommand({ping: 1})" -u "$$MONGO_ROOT_USER" -p "$$MONGO_ROOT_PASSWORD" --authenticationDatabase admin --quiet
+        echo 'db.runCommand({ ping: 1 })' | mongo -u $$MONGO_ROOT_USER -p $$MONGO_ROOT_PASSWORD --authenticationDatabase admin --quiet
       interval: 15s
       timeout: 10s
       retries: 6
       start_period: 30s
     ports:
       - "27017:27017"
+    command: --bind_ip_all
 
   postgres:
     image: postgres:15.5-alpine
