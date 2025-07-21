@@ -67,6 +67,11 @@ services:
     restart: unless-stopped
     ports:
       - "6432:6432"
+    depends_on:
+      - postgres
+    volumes:
+      - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
+      - ./userlist.txt:/etc/pgbouncer/userlist.txt
     environment:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
@@ -79,8 +84,6 @@ services:
       RESERVE_POOL_SIZE: 10
       RESERVE_POOL_TIMEOUT: 5
       SERVER_RESET_QUERY: DISCARD ALL
-    depends_on:
-      - postgres
     networks:
       - backend
 
