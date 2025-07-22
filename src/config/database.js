@@ -4,6 +4,8 @@ import config from "./env.js";
 
 // Initialize Prisma with logging events
 
+const baseUrl = config.get("databaseUrl");
+
 const finalUrl = baseUrl.includes("?")
   ? `${baseUrl}&connection_limit=20&pool_timeout=10`
   : `${baseUrl}?connection_limit=20&pool_timeout=10`;
