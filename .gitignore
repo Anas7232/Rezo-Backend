@@ -53,7 +53,4 @@ temp/
 *.test.js
 *.spec.js
 
-# Text files
-*.txt
-
 client_secret_1073930846177-docvkc3l97sa6didhrrrr7jkr07302vq.apps.googleusercontent.com.json
