@@ -116,7 +116,7 @@ services:
       PORT: 3000
       REDIS_URL: redis://redis:6379
       MONGODB_URI: ${MONGODB_URI}
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:6432/${POSTGRES_DB}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@pgbouncer:6432/${POSTGRES_DB}?pgbouncer=true
     ports:
       - "3000:3000"
     volumes:

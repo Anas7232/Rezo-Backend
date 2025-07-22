@@ -3,6 +3,11 @@ import { logger } from "./logger.js";
 import config from "./env.js";
 
 // Initialize Prisma with logging events
+
+const finalUrl = baseUrl.includes("?")
+  ? `${baseUrl}&connection_limit=20&pool_timeout=10`
+  : `${baseUrl}?connection_limit=20&pool_timeout=10`;
+
 const prisma = new PrismaClient({
   log: [
     { level: "warn", emit: "event" },
@@ -10,7 +15,7 @@ const prisma = new PrismaClient({
   ],
   datasources: {
     db: {
-      url: config.get("databaseUrl") + `&connection_limit=20&pool_timeout=10`,
+      url: finalUrl,
     },
   },
 });
