@@ -67,25 +67,17 @@ services:
     restart: unless-stopped
     ports:
       - "6432:6432"
-    depends_on:
-      - postgres
     volumes:
       - ./pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini
       - ./userlist.txt:/etc/pgbouncer/userlist.txt
+      - pgbouncer_log:/var/log
+      - pgbouncer_pid:/var/run/pgbouncer
+    depends_on:
+      - postgres
     environment:
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${POSTGRES_DB}
-      POOL_MODE: transaction
-      MAX_CLIENT_CONN: 2000
-      DEFAULT_POOL_SIZE: 50
-      RESERVE_POOL_SIZE: 10
-      RESERVE_POOL_TIMEOUT: 5
-      SERVER_RESET_QUERY: DISCARD ALL
-    networks:
-      - backend
+      DB_USER: postgres
+      DB_PASSWORD: changeme123
+      DB_NAME: rezo_db
 
   redis:
     image: redis:7.2-alpine
@@ -143,6 +135,8 @@ volumes:
   mongodb_data:
   postgres_data:
   redis_data:
+  pgbouncer_log:
+  pgbouncer_pid:
 
 networks:
   backend:
