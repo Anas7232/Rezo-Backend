@@ -78,6 +78,11 @@ services:
       DB_USER: postgres
       DB_PASSWORD: changeme123
       DB_NAME: rezo_db
+    entrypoint: >
+      /bin/sh -c "
+        mkdir -p /var/run/pgbouncer /var/log/pgbouncer &&
+        chown -R pgbouncer:pgbouncer /var/run/pgbouncer /var/log/pgbouncer &&
+        exec /usr/local/bin/docker-entrypoint.sh"
 
   redis:
     image: redis:7.2-alpine
