@@ -62,7 +62,7 @@ services:
     ]
 
   pgbouncer:
-    image: edoburu/pgbouncer
+    image: edoburu/pgbouncer:latest
     container_name: pgbouncer
     restart: unless-stopped
     ports:
@@ -75,13 +75,14 @@ services:
     depends_on:
       - postgres
     environment:
-      DB_USER: postgres
-      DB_PASSWORD: changeme123
-      DB_NAME: rezo_db
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
     entrypoint: >
       /bin/sh -c "
-        mkdir -p /var/run/pgbouncer /var/log/pgbouncer &&
-        chown -R pgbouncer:pgbouncer /var/run/pgbouncer /var/log/pgbouncer &&
+        addgroup -S pgbouncer && adduser -S -G pgbouncer pgbouncer;
+        mkdir -p /var/run/pgbouncer /var/log/pgbouncer;
+        chown -R pgbouncer:pgbouncer /var/run/pgbouncer /var/log/pgbouncer /etc/pgbouncer;
         exec /usr/local/bin/docker-entrypoint.sh"
 
   redis:
