@@ -48,7 +48,7 @@ app.use(sessionMiddleware);
 // temprarily disabled for local development
 app.use(
   cors({
-    origin: ["http://localhost:3001", "http://localhost:3000"], // Allow both frontend and backend
+    origin: ["https://www.smare.org", "http://localhost:3000"], // Allow both frontend and backend
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"],
