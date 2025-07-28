@@ -85,6 +85,7 @@ export const registerUser = async ({ email, password }) => {
     `Your verification code is: ${otp}`,
     `<strong>${otp}</strong>`
   ).catch((error) => {
+    console.error("SMTP Send Error =>", error);  // 👈 ADD THIS
     logger.error(`Email send failed: ${error.message}`);
     throw new Error("Failed to send verification email");
   });
@@ -286,7 +287,7 @@ export const loginUser = async (email, password, context) => {
         id: true,
         email: true,
         isVerified: true,
-       
+
       },
     }),
     roles: user.roles.map((role) => role.role.name),

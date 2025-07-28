@@ -124,6 +124,12 @@ const config = convict({
       env: "MAIL_PASS",
       sensitive: true,
     },
+    sender: {
+      doc: "Email verified sender address",
+      format: String,
+      default: "",
+      env: "SENDER_EMAIL",
+    },
   },
   casbin: {
     policyVersion: "1.0.0",
@@ -152,7 +158,7 @@ const config = convict({
     default: "http://localhost:3000/",
     env: "FRONTEND_SUCCESS_URL",
   },
-  login:{
+  login: {
     maxAttempts: {
       doc: "Max login attempts",
       format: Number,

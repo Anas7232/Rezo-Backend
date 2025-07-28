@@ -27,7 +27,7 @@ export const sendEmail = async (to, subject, html) => {
 
   try {
     const info = await transporter.sendMail({
-      from: `"Your App Name" <${config.get("email.user")}>`,
+      from: `"Your App" <${config.get("email.sender")}>`,
       to,
       subject,
       html,
