@@ -19,17 +19,23 @@ export const sendEmail = async (to, subject, html) => {
     port: config.get("email.port"),
     secure: config.get("email.secure"),
     user: config.get("email.user"),
-    pass: config.get("email.pass"),
-    to,
-    subject,
-    html,
-  });
-  await transporter.sendMail({
-    from: config.get("email.user"),
+    pass: config.get("email.pass") ? "*****" : null,
     to,
     subject,
     html,
   });
 
-  // console.log(`Message sent: ${info.messageId}`);
+  try {
+    const info = await transporter.sendMail({
+      from: `"Your App Name" <${config.get("email.user")}>`,
+      to,
+      subject,
+      html,
+    });
+
+    console.log("Email sent ✅:", info.messageId);
+  } catch (err) {
+    console.error("❌ Email sending failed:", err);
+    throw new Error("Failed to send verification email");
+  }
 };
